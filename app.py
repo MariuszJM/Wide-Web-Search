@@ -6,13 +6,9 @@ import logging
 import zipfile
 import io
 
-# Loading environment variables
+
 load_dotenv()
-
-# Path to the log file
 LOG_FILE = 'app.log'
-
-# Configure logging
 logging.basicConfig(filename=LOG_FILE, level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
 
 def main():
