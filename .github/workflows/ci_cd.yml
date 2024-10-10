@@ -24,13 +24,13 @@ jobs:
     - name: Set up environment variables
       run: echo "Environment variables are set."
       env:
+        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
         GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
 
     - name: Run tests
       run: |
         pytest tests/
-      env:
-        GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
 
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
