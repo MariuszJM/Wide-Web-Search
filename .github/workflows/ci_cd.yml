@@ -1,0 +1,46 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12.3'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Set up environment variables
+      run: echo "Environment variables are set."
+      env:
+        GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+
+    - name: Run tests
+      run: |
+        pytest tests/
+      env:
+        GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - name: Build and push Docker image to Docker Hub
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/streamlit_app:${{ github.sha }}
