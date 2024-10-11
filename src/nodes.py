@@ -33,16 +33,35 @@ def google_retrieve_urls(state):
     search = GoogleSearchAPIWrapper()
     unique_urls = set()
 
-    def google_top_results(query):
-        return search.results(query, sources_per_query, search_params={'dateRestrict': f'd{time_horizon}', 'gl': 'EN'})
-
     for search_query in search_queries:
-        results = google_top_results(search_query)
+        results = search.results(search_query, sources_per_query, search_params={'dateRestrict': f'd{time_horizon}', 'gl': 'EN'})
         urls = [item['link'] for item in results]
         unique_urls.update(urls)
 
     state["unique_urls"] = list(unique_urls)
     logger.info(f"Retrieved {len(unique_urls)} unique URLs from Google.")
+    return state
+
+def google_process_content(state):
+    logger = state["logger"]
+    unique_urls = state["unique_urls"]
+    docs = []
+    sources = {}
+    for url in unique_urls:
+        loader = WebBaseLoader(url)
+        try:
+            doc = loader.load()  
+            docs.extend(doc)
+            title = doc[0].metadata.get("title", url)
+            content = doc[0].page_content
+            sources[title] = {
+                "url": url,
+                "content": content
+            }
+        except Exception as e:
+            logger.warning(f"Failed to load content from {url}: {e}")
+    state["source_items"] = sources
+    logger.info(f"Processed content from {len(docs)} Google documents.")
     return state
 
 def youtube_retrieve_urls(state):
@@ -51,14 +70,9 @@ def youtube_retrieve_urls(state):
     sources_per_query = state["sources_per_query"]
 
     unique_urls = set()
-
-    def youtube_top_results(query, num_results):
-        tool = YouTubeSearchTool()
-        results = tool.run(query, num_results)
-        return results
-
+    tool = YouTubeSearchTool()
     for search_query in search_queries:
-        results = youtube_top_results(search_query, 2 * sources_per_query)
+        results = tool.run(search_query, 2 * sources_per_query)
         for item in results:
             unique_urls.add(item['url'])
 
@@ -106,24 +120,6 @@ def youtube_process_content(state):
     logger.info(f"Processed content from {len(docs)} YouTube videos after filtering by time horizon.")
     return state
 
-def google_process_content(state):
-    logger = state["logger"]
-    unique_urls = state["unique_urls"]
-
-    def google_get_content(urls):
-        docs = []
-        for url in urls:
-            loader = WebBaseLoader(url)
-            try:
-                docs.extend(loader.load())
-            except Exception as e:
-                logger.warning(f"Failed to load content from {url}: {e}")
-        return docs
-
-    docs = google_get_content(unique_urls)
-    state["all_docs"] = docs
-    logger.info(f"Processed content from {len(docs)} Google documents.")
-    return state
 
 def create_embeddings(state):
     logger = state["logger"]

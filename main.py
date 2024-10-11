@@ -9,7 +9,7 @@ from src.nodes import (
     google_process_content,
     youtube_process_content
 )
-from typing import List
+from typing import List, Dict
 from typing_extensions import TypedDict
 from pprint import pprint
 
@@ -67,9 +67,10 @@ class GraphState(TypedDict):
     llm_json_mode: object
     time_horizon: int
     max_outputs: int
+    sources_per_query: int
     logger: object
     unique_urls: List[str]
-    sources_per_query: int
+    source_items: Dict
 
 # Routing function to determine the next node based on platform
 def route_platform(state):
