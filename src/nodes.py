@@ -20,9 +20,11 @@ from langchain_nomic.embeddings import NomicEmbeddings
 
 
 def google_retrieve_urls(state):
+    
     logger = state["logger"]
     search_queries = state["search_queries"]
     time_horizon = state["time_horizon"]
+    sources_per_query = state["sources_per_query"]
 
     # Check API keys
     if not os.getenv("GOOGLE_API_KEY") or not os.getenv("GOOGLE_CSE_ID"):
@@ -31,8 +33,8 @@ def google_retrieve_urls(state):
     search = GoogleSearchAPIWrapper()
     unique_urls = set()
 
-    def google_top_results(query, SOURCES_PER_QUERY=10):
-        return search.results(query, SOURCES_PER_QUERY, search_params={'dateRestrict': f'd{time_horizon}', 'gl': 'EN'})
+    def google_top_results(query):
+        return search.results(query, sources_per_query, search_params={'dateRestrict': f'd{time_horizon}', 'gl': 'EN'})
 
     for search_query in search_queries:
         results = google_top_results(search_query)
@@ -43,35 +45,66 @@ def google_retrieve_urls(state):
     logger.info(f"Retrieved {len(unique_urls)} unique URLs from Google.")
     return state
 
-
 def youtube_retrieve_urls(state):
     logger = state["logger"]
     search_queries = state["search_queries"]
-    time_horizon = state["time_horizon"]
+    sources_per_query = state["sources_per_query"]
 
     unique_urls = set()
 
-    def youtube_top_results(query, SOURCES_PER_QUERY=10):
+    def youtube_top_results(query, num_results):
         tool = YouTubeSearchTool()
-        results = tool.run(f"{query}, {2*SOURCES_PER_QUERY}")
-        # Filtering by publishedAt
-        filtered_results = []
-        for item in results:
-            # Assuming item['publishedAt'] is the publication date in ISO 8601 format
-            published_date = datetime.strptime(item['publishedAt'], '%Y-%m-%dT%H:%M:%SZ')
-            if datetime.now() - published_date <= timedelta(days=time_horizon):
-                filtered_results.append(item)
-        return filtered_results[:SOURCES_PER_QUERY]
+        results = tool.run(query, num_results)
+        return results
 
     for search_query in search_queries:
-        results = youtube_top_results(search_query)
-        urls = [item['url'] for item in results]
-        unique_urls.update(urls)
+        results = youtube_top_results(search_query, 2 * sources_per_query)
+        for item in results:
+            unique_urls.add(item['url'])
 
     state["unique_urls"] = list(unique_urls)
-    logger.info(f"Retrieved {len(unique_urls)} unique URLs from YouTube.")
+    logger.info(f"Retrieved {len(unique_urls)} initial URLs from YouTube.")
     return state
 
+def youtube_process_content(state):
+    logger = state["logger"]
+    unique_urls = state["unique_urls"]
+    time_horizon = state["time_horizon"]
+    sources_per_query = state["sources_per_query"]
+
+    def youtube_get_content(urls):
+        filtered_docs = []
+        urls_within_time_horizon = []
+        for url in urls:
+            loader = YoutubeLoader.from_youtube_url(
+                url, add_video_info=True
+            )
+            try:
+                loaded_docs = loader.load()
+                if loaded_docs:
+                    # Assuming that 'publish_date' is in metadata of the document
+                    doc = loaded_docs[0]
+                    published_date_str = doc.metadata.get('publish_date')
+                    if published_date_str:
+                        try:
+                            published_date = datetime.strptime(published_date_str, '%Y-%m-%dT%H:%M:%SZ')
+                        except ValueError:
+                            # Handle different date formats if necessary
+                            published_date = datetime.strptime(published_date_str, '%Y-%m-%d')
+                        if datetime.now() - published_date <= timedelta(days=time_horizon):
+                            filtered_docs.extend(loaded_docs)
+                            urls_within_time_horizon.extend(url)
+                            if len(filtered_docs) >= sources_per_query:
+                                break
+            except Exception as e:
+                logger.warning(f"Failed to load content from {url}: {e}")
+        return filtered_docs, urls_within_time_horizon
+
+    docs, urls_within_time_horizon = youtube_get_content(unique_urls)
+    state["all_docs"] = docs
+    state["unique_urls"] = urls_within_time_horizon
+    logger.info(f"Processed content from {len(docs)} YouTube videos after filtering by time horizon.")
+    return state
 
 def google_process_content(state):
     logger = state["logger"]
@@ -91,29 +124,6 @@ def google_process_content(state):
     state["all_docs"] = docs
     logger.info(f"Processed content from {len(docs)} Google documents.")
     return state
-
-
-def youtube_process_content(state):
-    logger = state["logger"]
-    unique_urls = state["unique_urls"]
-
-    def youtube_get_content(urls):
-        docs = []
-        for url in urls:
-            loader = YoutubeLoader.from_youtube_url(
-                url, add_video_info=True
-            )
-            try:
-                docs.extend(loader.load())
-            except Exception as e:
-                logger.warning(f"Failed to load content from {url}: {e}")
-        return docs
-
-    docs = youtube_get_content(unique_urls)
-    state["all_docs"] = docs
-    logger.info(f"Processed content from {len(docs)} YouTube videos.")
-    return state
-
 
 def create_embeddings(state):
     logger = state["logger"]
