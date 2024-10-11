@@ -5,7 +5,7 @@ __pycache__/
 
 # C extensions
 *.so
-
+runs
 # Distribution / packaging
 .Python
 build/
@@ -164,3 +164,4 @@ merge_files.sh
 merged_output.txt
 demo.ipynb
 langgraph_adaptive_rag_local.ipynb
+setup.sh
