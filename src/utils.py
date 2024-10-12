@@ -17,11 +17,13 @@ def create_retriever(documents):
         chunk_size=1000, chunk_overlap=200
     )
     doc_chunks = text_splitter.split_documents(documents)
+    k = min(len(doc_chunks), 5)
     vectorstore = SKLearnVectorStore.from_documents(
         documents=doc_chunks,
         embedding=NomicEmbeddings(model="nomic-embed-text-v1.5", inference_mode="local", device="nvidia"),
     )
-    retriever = vectorstore.as_retriever(search_kwargs={'k': 1})
+    
+    retriever = vectorstore.as_retriever(search_kwargs={'k': k})
     return retriever
 
 def is_relevant_chunk(chunk_text, question, llm_json):
