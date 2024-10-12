@@ -1,5 +1,3 @@
-# src/processing.py
-
 from src.utils import (
     create_retriever,
     is_relevant_chunk,
@@ -23,8 +21,7 @@ def process_content(source_items, llm, llm_json):
             if not relevant_chunks:
                 continue
             answer = generate_answer(question, relevant_chunks, llm)
-            is_valid = check_hallucination(answer, relevant_chunks, llm_json)
-            if is_valid.lower() == 'yes':
+            if check_hallucination(answer, relevant_chunks, llm_json).lower() == 'yes':
                 qa_pairs[question] = answer
         if qa_pairs:
             summary = summarize_documents_map_reduce(documents, llm)
@@ -36,4 +33,8 @@ def process_content(source_items, llm, llm_json):
     ranked_items = sorted(processed_items.items(), key=lambda x: len(x[1]['qa']), reverse=True)
     top_items = dict(ranked_items[:MAX_RESULTS])
     less_relevant_items = dict(ranked_items[MAX_RESULTS:])
-    return {'top_items': top_items, 'less_relevant_items': less_relevant_items}
+    return {
+        'top_items': top_items,
+        'less_relevant_items': less_relevant_items
+    }
+

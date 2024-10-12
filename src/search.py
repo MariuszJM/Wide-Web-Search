@@ -1,6 +1,3 @@
-# src/search.py
-
-import os
 from datetime import datetime, timedelta
 from langchain_community.document_loaders import WebBaseLoader, YoutubeLoader
 from langchain_google_community import GoogleSearchAPIWrapper

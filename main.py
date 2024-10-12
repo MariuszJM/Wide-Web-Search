@@ -1,5 +1,3 @@
-# main.py
-
 from src.llm import initialize_llm
 from src.search import search_content
 from src.processing import process_content

@@ -101,8 +101,9 @@ def summarize_documents_map_reduce(documents, llm):
     )
     doc_chunks = text_splitter.split_documents(documents)
     
+    map_template = "You are an expert content summarizer. Combine your understanding of the following into a detailed nested bullet point summary:\n\n{context}"
     map_prompt = ChatPromptTemplate.from_messages([
-        ("human", "You are an expert content summarizer. Combine your understanding of the following into a detailed nested bullet point summary:\n\n{context}")
+        ("human", map_template)
     ])
     
     reduce_template = """
@@ -158,3 +159,4 @@ def save_results(processed_items, output_dir):
     less_relevant_items = processed_items.get('less_relevant_items', {})
     with open(os.path.join(output_dir, 'less_relevant_items.yaml'), 'w') as f:
         yaml.dump(less_relevant_items, f, default_flow_style=False)
+
