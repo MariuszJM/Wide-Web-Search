@@ -95,22 +95,55 @@ def check_hallucination(answer, relevant_chunks, llm_json):
         return "no"
     return result.get('binary_score', 'no')
 
-def summarize_documents(documents, llm):
+def summarize_documents_map_reduce(documents, llm):
     text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
         chunk_size=LLM_MAX_TOKENS, chunk_overlap=0
     )
     doc_chunks = text_splitter.split_documents(documents)
+    
     map_prompt = ChatPromptTemplate.from_messages([
-        ("human", "You are an expert summarizer. Summarize the following content into detailed bullet points:\n\n{context}")
+        ("human", "You are an expert content summarizer. Combine your understanding of the following into a detailed nested bullet point summary:\n\n{context}")
     ])
+    
+    reduce_template = """
+    The following is a set of summaries:
+    {docs}
+    Combine all of your understanding into a single, detailed nested bullet point summary with an overview at the beginning.
+    """
     reduce_prompt = ChatPromptTemplate.from_messages([
-        ("human", "Combine the following summaries into a single detailed summary:\n\n{summaries}")
+        ("human", reduce_template)
     ])
+    
     map_chain = map_prompt | llm | StrOutputParser()
-    summaries = [map_chain.invoke(chunk.page_content) for chunk in doc_chunks]
     reduce_chain = reduce_prompt | llm | StrOutputParser()
-    combined_summary = reduce_chain.invoke("\n\n".join(summaries))
-    return combined_summary
+
+    summaries = [map_chain.invoke(chunk.page_content) for chunk in doc_chunks]
+    
+    def calculate_total_tokens(summaries):
+        return sum(llm.get_num_tokens(summary) for summary in summaries)
+    
+    def split_summaries_into_chunks(summaries, max_tokens):
+        chunks, current_chunk, current_tokens = [], [], 0
+        for summary in summaries:
+            summary_tokens = llm.get_num_tokens(summary)
+            if current_tokens + summary_tokens <= max_tokens:
+                current_chunk.append(summary)
+                current_tokens += summary_tokens
+            else:
+                chunks.append(current_chunk)
+                current_chunk, current_tokens = [summary], summary_tokens
+        if current_chunk:
+            chunks.append(current_chunk)
+        return chunks
+
+    while calculate_total_tokens(summaries) > LLM_MAX_TOKENS:
+        chunks = split_summaries_into_chunks(summaries, LLM_MAX_TOKENS)
+        summaries = [reduce_chain.invoke("\n\n".join(chunk)) for chunk in chunks]
+
+    final_summary = reduce_chain.invoke("\n\n".join(summaries))
+    
+    return final_summary
+
 
 def create_output_directory(base_path):
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

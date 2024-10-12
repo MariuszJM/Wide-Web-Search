@@ -5,7 +5,7 @@ from src.utils import (
     is_relevant_chunk,
     generate_answer,
     check_hallucination,
-    summarize_documents
+    summarize_documents_map_reduce
 )
 from config import SPECIFIC_QUESTIONS, MAX_RESULTS
 
@@ -27,7 +27,7 @@ def process_content(source_items, llm, llm_json):
             if is_valid.lower() == 'yes':
                 qa_pairs[question] = answer
         if qa_pairs:
-            summary = summarize_documents(documents, llm)
+            summary = summarize_documents_map_reduce(documents, llm)
             processed_items[title] = {
                 'url': data['url'],
                 'summary': summary,
