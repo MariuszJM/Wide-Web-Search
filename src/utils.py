@@ -1,6 +1,7 @@
 # src/utils.py
 
 import os
+import logging
 import json
 import yaml
 from datetime import datetime
@@ -17,7 +18,7 @@ def create_retriever(documents):
         chunk_size=1000, chunk_overlap=200
     )
     doc_chunks = text_splitter.split_documents(documents)
-    k = min(len(doc_chunks), 5)
+    k = min(len(doc_chunks), 3)
     vectorstore = SKLearnVectorStore.from_documents(
         documents=doc_chunks,
         embedding=NomicEmbeddings(model="nomic-embed-text-v1.5", inference_mode="local", device="nvidia"),
@@ -29,30 +30,36 @@ def create_retriever(documents):
 def is_relevant_chunk(chunk_text, question, llm_json):
     instructions = """You are a grader assessing the relevance of a document to a user's question.
 
-If the document contains keywords or semantic meaning related to the question, grade it as relevant."""
+                    If the document contains keywords or semantic meaning related to the question, grade it as relevant."""
     prompt = f"""Document:\n\n{chunk_text}\n\nQuestion:\n\n{question}\n\nDoes the document contain information relevant to the question?
 
-Return JSON with a single key 'binary_score' with value 'yes' or 'no'."""
+                Return JSON with a single key 'binary_score' with value 'yes' or 'no'."""
     response = llm_json.invoke([
         SystemMessage(content=instructions),
         HumanMessage(content=prompt)
     ])
-    result = json.loads(response.content)
+    try:
+        result = json.loads(response.content)
+    except json.JSONDecodeError:
+        logging.warning(
+            "LLM output is not a valid JSON. Please check your LLM model or the instructions."
+        )
+        return "no"
     return result.get('binary_score', '').lower() == 'yes'
 
 def generate_answer(question, relevant_chunks, llm):
     context = "\n\n".join([chunk.page_content for chunk in relevant_chunks])
     prompt = f"""You are an assistant for answering questions.
 
-Context:
+                Context:
 
-{context}
+                {context}
 
-Question:
+                Question:
 
-{question}
+                {question}
 
-Provide a concise answer (maximum three sentences) based only on the above context."""
+                Provide a concise answer (maximum three sentences) based only on the above context."""
     response = llm.invoke([HumanMessage(content=prompt)])
     return response.content.strip()
 
@@ -60,26 +67,32 @@ def check_hallucination(answer, relevant_chunks, llm_json):
     facts = "\n\n".join([chunk.page_content for chunk in relevant_chunks])
     instructions = """You are a teacher grading a student's answer based on provided facts.
 
-Criteria:
+                    Criteria:
 
-1. The student's answer should be grounded in the facts.
-2. The student's answer should not contain information outside the scope of the facts.
+                    1. The student's answer should be grounded in the facts.
+                    2. The student's answer should not contain information outside the scope of the facts.
 
-Return JSON with two keys: 'binary_score' ('yes' or 'no') indicating if the answer meets the criteria, and 'explanation' providing reasoning."""
+                    Return JSON with two keys: 'binary_score' ('yes' or 'no') indicating if the answer meets the criteria, and 'explanation' providing reasoning."""
     prompt = f"""Facts:
 
-{facts}
+                {facts}
 
-Student's Answer:
+                Student's Answer:
 
-{answer}
+                {answer}
 
-Is the student's answer grounded in the facts?"""
+                Is the student's answer grounded in the facts?"""
     response = llm_json.invoke([
         SystemMessage(content=instructions),
         HumanMessage(content=prompt)
     ])
-    result = json.loads(response.content)
+    try:
+        result = json.loads(response.content)
+    except json.JSONDecodeError:
+        logging.warning(
+            "LLM output is not a valid JSON. Please check your LLM model or the instructions."
+        )
+        return "no"
     return result.get('binary_score', 'no')
 
 def summarize_documents(documents, llm):
