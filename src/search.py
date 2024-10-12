@@ -41,13 +41,17 @@ def search_youtube():
     youtube_tool = YouTubeSearchTool()
     unique_urls = set()
     for query in SEARCH_QUERIES:
-        urls_str = youtube_tool.run(query, 2 * SOURCES_PER_QUERY)
+        urls_str = youtube_tool.run(query, 4 * SOURCES_PER_QUERY)
         urls = set(eval(urls_str))
         unique_urls.update(urls)
     source_items = {}
     for url in unique_urls:
         loader = YoutubeLoader.from_youtube_url(url, add_video_info=True)
-        documents = loader.load()
+        try:
+            documents = loader.load()
+        except Exception as e:
+            print(f"Loading {url} failed: {e}")
+            continue
         title = documents[0].metadata.get('title', url)
         publish_date_str = documents[0].metadata.get('publish_date')
         if publish_date_str:
