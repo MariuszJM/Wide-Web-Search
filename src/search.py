@@ -7,7 +7,10 @@ from googleapiclient.discovery import build
 from youtube_transcript_api import YouTubeTranscriptApi
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
-
+from datetime import datetime, timedelta
+import os
+from googleapiclient.discovery import build
+from youtube_transcript_api import YouTubeTranscriptApi
 
 def search_content():
     if PLATFORM == 'google':
@@ -75,7 +78,6 @@ def search_youtube():
 
     return source_items
 
-
 class YouTubeDocumentLoader(BaseLoader):
     def __init__(self, query: str, limit: int, time_horizon: int) -> None:
         self.api_key = os.getenv('GOOGLE_API_KEY')
@@ -95,7 +97,14 @@ class YouTubeDocumentLoader(BaseLoader):
         return self.collect_source_details(filtered_sources)
 
     def fetch_source_items(self):
-        response = self.youtube.search().list(q=self.query, part="snippet", maxResults=4*self.limit, type="video").execute()
+        published_after = (datetime.now() - timedelta(days=self.time_horizon)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        response = self.youtube.search().list(
+            q=self.query,
+            part="snippet",
+            maxResults=self.limit,
+            type="video",
+            publishedAfter=published_after
+        ).execute()
         return response["items"]
 
     def filter_low_quality_sources(self, sources):
