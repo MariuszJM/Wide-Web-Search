@@ -38,9 +38,11 @@ def search_youtube():
     youtube_tool = YouTubeSearchTool()
     unique_urls = set()
     for query in SEARCH_QUERIES:
-        urls_str = youtube_tool.run(query, 4 * SOURCES_PER_QUERY)
-        urls = set(eval(urls_str))
-        unique_urls.update(urls)
+        query = query.replace(",", " ")
+        for _ in range(2):
+            urls_str = youtube_tool.run(f"{query},{2*SOURCES_PER_QUERY}")
+            urls = set(eval(urls_str))
+            unique_urls.update(urls)
     source_items = {}
     for url in unique_urls:
         loader = YoutubeLoader.from_youtube_url(url, add_video_info=True)
