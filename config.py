@@ -1,5 +1,3 @@
-# config.py
-
 SEARCH_QUERIES = [
     "High-level overview of intelligent user interfaces and their impact on modern UI/UX design",
     "Tools and frameworks for building intelligent user interfaces: A 2024 guide"
@@ -14,9 +12,9 @@ TIME_HORIZON_DAYS = 185
 
 MAX_RESULTS = 1
 
-PLATFORM = 'google'
+PLATFORM = 'youtube'
 
-SOURCES_PER_QUERY = 2
+SOURCES_PER_QUERY = 10
 
 LLM_MODEL = "llama3.2:latest"
 LLM_PROVIDER = "ollama"

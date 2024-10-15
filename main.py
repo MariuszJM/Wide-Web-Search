@@ -1,17 +1,23 @@
 from src.llm import LLMHandler
-from src.search import search_content
+from src.search import GoogleSearchEngine, YouTubeSearchEngine  # Import search engines
 from src.processing import process_content
 from src.utils import save_results, create_output_directory
-from config import (
-    OUTPUT_FOLDER,
-    LLM_PROVIDER,
-    LLM_MODEL,
-) 
+from config import OUTPUT_FOLDER, PLATFORM, LLM_PROVIDER, LLM_MODEL
 
 
 def main():
+    if PLATFORM == "google":
+        search_engine = GoogleSearchEngine()
+    elif PLATFORM == "youtube":
+        search_engine = YouTubeSearchEngine()
+    else:
+        raise ValueError("Invalid platform. Choose 'google' or 'youtube'.")
+
     llm_handler = LLMHandler(LLM_PROVIDER, LLM_MODEL)
-    source_items = search_content()
+
+    urls = search_engine.fetch_urls()
+    source_items = search_engine.load_source_content(urls)
+
     processed_items = process_content(
         source_items, llm_handler.llm, llm_handler.llm_json
     )
