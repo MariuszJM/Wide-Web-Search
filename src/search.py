@@ -26,7 +26,7 @@ class BaseSearchEngine(ABC):
         """Method to load the content from a list of URLs using subclass's load_documents."""
         source_items = {}
         for url in urls:
-            documents = self.load_documents(url)  # Call subclass-specific method
+            documents = self.load_documents(url) 
             title = documents[0].metadata.get("title", url)
             source_items[title] = {"url": url, "documents": documents, "qa": {}}
         return source_items
@@ -99,3 +99,12 @@ class YouTubeSearchEngine(BaseSearchEngine):
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
         content = " ".join([entry["text"] for entry in transcript])
         return [Document(page_content=content, metadata={"title": url, "url": url})]
+
+
+def get_search_engine(platform):
+    if platform == "google":
+        return GoogleSearchEngine()
+    elif platform == "youtube":
+        return YouTubeSearchEngine()
+    else:
+        raise ValueError("Invalid platform. Choose 'google' or 'youtube'.")

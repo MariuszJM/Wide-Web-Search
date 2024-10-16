@@ -1,5 +1,6 @@
 from src.processing import ContentProcessor
-from src.utils import save_results, create_output_directory, get_search_engine
+from src.utils import save_results, create_output_directory
+from src.search import get_search_engine
 from config import OUTPUT_FOLDER, PLATFORM, LLM_PROVIDER, LLM_MODEL
 from src.llm import LLMHandler
 

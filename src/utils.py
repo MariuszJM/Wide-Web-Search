@@ -1,7 +1,6 @@
 import os
 import yaml
 from datetime import datetime
-from src.search import GoogleSearchEngine, YouTubeSearchEngine
 
 
 def create_output_directory(base_path):
@@ -18,10 +17,3 @@ def save_results(processed_items, output_dir):
     with open(os.path.join(output_dir, 'less_relevant_items.yaml'), 'w') as f:
         yaml.dump(less_relevant_items, f, default_flow_style=False, sort_keys=False)
 
-def get_search_engine(platform):
-    if platform == "google":
-        return GoogleSearchEngine()
-    elif platform == "youtube":
-        return YouTubeSearchEngine()
-    else:
-        raise ValueError("Invalid platform. Choose 'google' or 'youtube'.")
