@@ -1,17 +1,7 @@
 from src.processing import ContentProcessor
-from src.utils import save_results, create_output_directory
+from src.utils import save_results, create_output_directory, get_search_engine
 from config import OUTPUT_FOLDER, PLATFORM, LLM_PROVIDER, LLM_MODEL
-from src.search import GoogleSearchEngine, YouTubeSearchEngine
 from src.llm import LLMHandler
-
-
-def get_search_engine(platform):
-    if platform == "google":
-        return GoogleSearchEngine()
-    elif platform == "youtube":
-        return YouTubeSearchEngine()
-    else:
-        raise ValueError("Invalid platform. Choose 'google' or 'youtube'.")
 
 
 def main():
