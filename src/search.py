@@ -25,9 +25,13 @@ class BaseSearchEngine(ABC):
         """Method to load the content from a list of URLs using subclass's load_documents."""
         source_items = {}
         for url in urls:
-            documents = self.load_documents(url)
-            title = documents[0].metadata.get("title", url)
-            source_items[title] = {"url": url, "documents": documents, "qa": {}}
+            try:
+                documents = self.load_documents(url)
+                title = documents[0].metadata.get("title", url)
+                source_items[title] = {"url": url, "documents": documents, "qa": {}}
+            except Exception as e:
+                print(f"Error loading documents from {url}: {e}")
+                continue
         return source_items
 
 
@@ -97,7 +101,9 @@ class YouTubeSearchEngine(BaseSearchEngine):
         video_id = url.split("watch?v=")[-1]
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
         content = " ".join([entry["text"] for entry in transcript])
-        return [Document(page_content=content, metadata={"title": url, "url": url})]
+        response = self.youtube.videos().list(part="snippet", id=video_id).execute()
+        title = response["items"][0]["snippet"]["title"]
+        return [Document(page_content=content, metadata={"title": title, "url": url})]
 
 
 def get_search_engine(platform):
