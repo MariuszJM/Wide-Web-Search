@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_google_community import GoogleSearchAPIWrapper
-from config import SEARCH_QUERIES, SOURCES_PER_QUERY, TIME_HORIZON_DAYS
+from config import SEARCH_QUERIES, MAX_SOURCES_PER_SEARCH_QUERY, TIME_HORIZON_DAYS
 import os
 from googleapiclient.discovery import build
 from youtube_transcript_api import YouTubeTranscriptApi
@@ -26,7 +26,7 @@ class BaseSearchEngine(ABC):
         """Method to load the content from a list of URLs using subclass's load_documents."""
         source_items = {}
         for url in urls:
-            documents = self.load_documents(url) 
+            documents = self.load_documents(url)
             title = documents[0].metadata.get("title", url)
             source_items[title] = {"url": url, "documents": documents, "qa": {}}
         return source_items
@@ -42,7 +42,7 @@ class GoogleSearchEngine(BaseSearchEngine):
         for query in queries:
             results = search_wrapper.results(
                 query,
-                SOURCES_PER_QUERY,
+                MAX_SOURCES_PER_SEARCH_QUERY,
                 search_params={"dateRestrict": f"d{TIME_HORIZON_DAYS}", "gl": "EN"},
             )
             urls = [item["link"] for item in results]
@@ -77,7 +77,7 @@ class YouTubeSearchEngine(BaseSearchEngine):
                 .list(
                     q=query,
                     part="snippet",
-                    maxResults=SOURCES_PER_QUERY,
+                    maxResults=MAX_SOURCES_PER_SEARCH_QUERY,
                     type="video",
                     publishedAfter=(
                         datetime.now() - timedelta(days=TIME_HORIZON_DAYS)
