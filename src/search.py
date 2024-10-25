@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_google_community import GoogleSearchAPIWrapper
-from config import SEARCH_QUERIES, MAX_SOURCES_PER_SEARCH_QUERY, TIME_HORIZON_DAYS
 import os
 from googleapiclient.discovery import build
 from youtube_transcript_api import YouTubeTranscriptApi
@@ -13,7 +12,7 @@ class BaseSearchEngine(ABC):
     """Base class for common search engine logic."""
 
     @abstractmethod
-    def fetch_urls(self, queries):
+    def fetch_urls(self, queries, max_sources, time_horizon):
         """Method to fetch unique URLs. Must be implemented by subclasses."""
         pass
 
@@ -35,15 +34,15 @@ class BaseSearchEngine(ABC):
 class GoogleSearchEngine(BaseSearchEngine):
     """Search engine class for Google."""
 
-    def fetch_urls(self, queries=SEARCH_QUERIES):
+    def fetch_urls(self, queries, max_sources, time_horizon):
         search_wrapper = GoogleSearchAPIWrapper()
         unique_urls = set()
 
         for query in queries:
             results = search_wrapper.results(
                 query,
-                MAX_SOURCES_PER_SEARCH_QUERY,
-                search_params={"dateRestrict": f"d{TIME_HORIZON_DAYS}", "gl": "EN"},
+                max_sources,
+                search_params={"dateRestrict": f"d{time_horizon}", "gl": "EN"},
             )
             urls = [item["link"] for item in results]
             unique_urls.update(urls)
@@ -68,7 +67,7 @@ class YouTubeSearchEngine(BaseSearchEngine):
     def authenticate_youtube(self):
         return build("youtube", "v3", developerKey=self.api_key)
 
-    def fetch_urls(self, queries=SEARCH_QUERIES):
+    def fetch_urls(self, queries, max_sources, time_horizon):
         unique_urls = set()
 
         for query in queries:
@@ -77,10 +76,10 @@ class YouTubeSearchEngine(BaseSearchEngine):
                 .list(
                     q=query,
                     part="snippet",
-                    maxResults=MAX_SOURCES_PER_SEARCH_QUERY,
+                    maxResults=max_sources,
                     type="video",
                     publishedAfter=(
-                        datetime.now() - timedelta(days=TIME_HORIZON_DAYS)
+                        datetime.now() - timedelta(days=time_horizon)
                     ).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 )
                 .execute()

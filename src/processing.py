@@ -6,16 +6,16 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser
 import json
 import logging
-from config import LLM_MAX_TOKENS, CONTENT_QUESTIONS, MAX_TOP_SOURCES
 
 
 class ContentProcessor:
     """Class to handle content processing logic."""
 
-    def __init__(self, llm, llm_json):
+    def __init__(self, llm, llm_json, llm_max_tokens):
         """Initialize with the given LLM and JSON LLM models."""
         self.llm = llm
         self.llm_json = llm_json
+        self.llm_max_tokens = llm_max_tokens
 
     def create_retriever(self, documents):
         """Create a retriever using document embeddings."""
@@ -85,7 +85,7 @@ class ContentProcessor:
     def summarize_documents_map_reduce(self, documents):
         """Summarize documents using a map-reduce approach."""
         text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-            chunk_size=LLM_MAX_TOKENS, chunk_overlap=0
+            chunk_size=self.llm_max_tokens, chunk_overlap=0
         )
         doc_chunks = text_splitter.split_documents(documents)
 
@@ -121,22 +121,22 @@ class ContentProcessor:
                 chunks.append(current_chunk)
             return chunks
 
-        while calculate_total_tokens(summaries) > LLM_MAX_TOKENS:
-            chunks = split_summaries_into_chunks(summaries, LLM_MAX_TOKENS)
+        while calculate_total_tokens(summaries) > self.llm_max_tokens:
+            chunks = split_summaries_into_chunks(summaries, self.llm_max_tokens)
             summaries = [reduce_chain.invoke("\n\n".join(chunk)) for chunk in chunks]
 
         final_summary = reduce_chain.invoke("\n\n".join(summaries))
 
         return final_summary
 
-    def process_content(self, source_items):
+    def process_content(self, source_items, content_questions, max_top_sources):
         """Main method to process content using the LLM and return processed items."""
         processed_items = {}
         for title, data in source_items.items():
             documents = data["documents"]
             retriever = self.create_retriever(documents)
             qa_pairs = {}
-            for question in CONTENT_QUESTIONS:
+            for question in content_questions:
                 relevant_chunks = retriever.get_relevant_documents(question)
                 relevant_chunks = [
                     chunk
@@ -158,6 +158,6 @@ class ContentProcessor:
         ranked_items = sorted(
             processed_items.items(), key=lambda x: len(x[1]["qa"]), reverse=True
         )
-        top_items = dict(ranked_items[:MAX_TOP_SOURCES])
-        less_relevant_items = dict(ranked_items[MAX_TOP_SOURCES:])
+        top_items = dict(ranked_items[:max_top_sources])
+        less_relevant_items = dict(ranked_items[max_top_sources:])
         return {"top_items": top_items, "less_relevant_items": less_relevant_items}
