@@ -6,7 +6,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser
 import json
 import logging
-from config import LLM_MAX_TOKENS, CONTENT_QUESTIONS, MAX_RESULTS
+from config import LLM_MAX_TOKENS, CONTENT_QUESTIONS, MAX_TOP_RESOURCES
 
 
 class ContentProcessor:
@@ -158,6 +158,6 @@ class ContentProcessor:
         ranked_items = sorted(
             processed_items.items(), key=lambda x: len(x[1]["qa"]), reverse=True
         )
-        top_items = dict(ranked_items[:MAX_RESULTS])
-        less_relevant_items = dict(ranked_items[MAX_RESULTS:])
+        top_items = dict(ranked_items[:MAX_TOP_RESOURCES])
+        less_relevant_items = dict(ranked_items[MAX_TOP_RESOURCES:])
         return {"top_items": top_items, "less_relevant_items": less_relevant_items}

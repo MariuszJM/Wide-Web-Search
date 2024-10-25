@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 from src.processing import ContentProcessor
 
 CONTENT_QUESTIONS = ["What is the main topic?", "What are the key points?"]
-MAX_RESULTS = 2
+MAX_TOP_RESOURCES = 2
 
 
 @pytest.fixture
@@ -39,7 +39,7 @@ def sample_source_items(sample_documents):
 
 
 @patch("src.processing.CONTENT_QUESTIONS", CONTENT_QUESTIONS)
-@patch("src.processing.MAX_RESULTS", MAX_RESULTS)
+@patch("src.processing.MAX_TOP_RESOURCES", MAX_TOP_RESOURCES)
 def test_is_relevant_chunk(mock_llm, mock_llm_json):
     processor = ContentProcessor(mock_llm, mock_llm_json)
     result = processor.is_relevant_chunk(
@@ -49,7 +49,7 @@ def test_is_relevant_chunk(mock_llm, mock_llm_json):
 
 
 @patch("src.processing.CONTENT_QUESTIONS", CONTENT_QUESTIONS)
-@patch("src.processing.MAX_RESULTS", MAX_RESULTS)
+@patch("src.processing.MAX_TOP_RESOURCES", MAX_TOP_RESOURCES)
 def test_generate_answer(mock_llm, mock_llm_json, sample_documents):
     processor = ContentProcessor(mock_llm, mock_llm_json)
     answer = processor.generate_answer("What is the main topic?", sample_documents)
@@ -57,7 +57,7 @@ def test_generate_answer(mock_llm, mock_llm_json, sample_documents):
 
 
 @patch("src.processing.CONTENT_QUESTIONS", CONTENT_QUESTIONS)
-@patch("src.processing.MAX_RESULTS", MAX_RESULTS)
+@patch("src.processing.MAX_TOP_RESOURCES", MAX_TOP_RESOURCES)
 def test_check_hallucination(mock_llm, mock_llm_json, sample_documents):
     processor = ContentProcessor(mock_llm, mock_llm_json)
     result = processor.check_hallucination("Mocked response", sample_documents)

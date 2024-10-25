@@ -64,10 +64,10 @@ def main():
         value=default_config.get("time_horizon_days", 90),
     )
 
-    max_results = st.sidebar.number_input(
+    max_top_resources = st.sidebar.number_input(
         "Maximum number of results",
         min_value=1,
-        value=default_config.get("max_results", 5),
+        value=default_config.get("max_top_resources", 5),
     )
 
     output_folder = st.sidebar.text_input(
@@ -83,7 +83,7 @@ def main():
         "content_questions": content_questions,
         "platform": platform,
         "time_horizon_days": time_horizon,
-        "max_results": max_results,
+        "max_top_resources": max_top_resources,
         "output_folder": output_folder,
     }
 
@@ -141,7 +141,7 @@ def run_wide_search(config):
 
     urls = search_engine.fetch_urls(
         search_queries=config["search_queries"],
-        sources_per_query=config["max_results"],
+        sources_per_query=config["max_top_resources"],
         time_horizon_days=config["time_horizon_days"],
     )
 
@@ -151,7 +151,7 @@ def run_wide_search(config):
     processed_items = content_processor.process_content(
         source_items,
         content_questions=config["content_questions"],
-        max_results=config["max_results"],
+        max_top_resources=config["max_top_resources"],
     )
 
     output_dir = create_output_directory(config["output_folder"])
