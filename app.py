@@ -47,9 +47,9 @@ def main():
         value="\n".join(default_config.get("search_queries", [])),
     ).split("\n")
 
-    specific_questions = st.sidebar.text_area(
+    content_questions = st.sidebar.text_area(
         "Specific questions (one per line)",
-        value="\n".join(default_config.get("specific_questions", [])),
+        value="\n".join(default_config.get("content_questions", [])),
     ).split("\n")
 
     platform = st.sidebar.selectbox(
@@ -80,7 +80,7 @@ def main():
         "llm_temperature": llm_temperature,
         "llm_max_tokens": llm_max_tokens,
         "search_queries": search_queries,
-        "specific_questions": specific_questions,
+        "content_questions": content_questions,
         "platform": platform,
         "time_horizon_days": time_horizon,
         "max_results": max_results,
@@ -150,7 +150,7 @@ def run_wide_search(config):
     content_processor = ContentProcessor(llm_handler)
     processed_items = content_processor.process_content(
         source_items,
-        specific_questions=config["specific_questions"],
+        content_questions=config["content_questions"],
         max_results=config["max_results"],
     )
 

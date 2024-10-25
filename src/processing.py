@@ -6,7 +6,8 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser
 import json
 import logging
-from config import LLM_MAX_TOKENS, SPECIFIC_QUESTIONS, MAX_RESULTS
+from config import LLM_MAX_TOKENS, CONTENT_QUESTIONS, MAX_RESULTS
+
 
 class ContentProcessor:
     """Class to handle content processing logic."""
@@ -135,7 +136,7 @@ class ContentProcessor:
             documents = data["documents"]
             retriever = self.create_retriever(documents)
             qa_pairs = {}
-            for question in SPECIFIC_QUESTIONS:
+            for question in CONTENT_QUESTIONS:
                 relevant_chunks = retriever.get_relevant_documents(question)
                 relevant_chunks = [
                     chunk

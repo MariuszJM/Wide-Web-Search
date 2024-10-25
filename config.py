@@ -1,9 +1,9 @@
 SEARCH_QUERIES = [
     "High-level overview of intelligent user interfaces and their impact on modern UI/UX design",
-    "Tools and frameworks for building intelligent user interfaces: A 2024 guide"
+    "Tools and frameworks for building intelligent user interfaces: A 2024 guide",
 ]
 
-SPECIFIC_QUESTIONS = [
+CONTENT_QUESTIONS = [
     "What are the latest trends in intelligent user interfaces, and how are they shaping user experience?",
     "What are the best practices for ensuring accessibility and inclusivity in AI-powered user interfaces?",
 ]
@@ -12,7 +12,7 @@ TIME_HORIZON_DAYS = 185
 
 MAX_RESULTS = 1
 
-PLATFORM = 'youtube'
+PLATFORM = "youtube"
 
 SOURCES_PER_QUERY = 10
 
@@ -21,4 +21,4 @@ LLM_PROVIDER = "ollama"
 LLM_TEMPERATURE = 0
 LLM_MAX_TOKENS = 7500
 
-OUTPUT_FOLDER = './runs'
+OUTPUT_FOLDER = "./runs"
