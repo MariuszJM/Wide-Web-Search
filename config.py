@@ -1,3 +1,7 @@
+from dotenv import load_dotenv
+import os
+
+
 SEARCH_QUERIES = [
     "High-level overview of intelligent user interfaces and their impact on modern UI/UX design",
     "Tools and frameworks for building intelligent user interfaces: A 2024 guide",
@@ -9,16 +13,16 @@ CONTENT_QUESTIONS = [
 ]
 
 TIME_HORIZON_DAYS = 185
-
 MAX_TOP_SOURCES = 1
-
 PLATFORM = "youtube"
-
 MAX_SOURCES_PER_SEARCH_QUERY = 10
 
-LLM_MODEL = "llama3.2:latest"
-LLM_PROVIDER = "ollama"
-LLM_TEMPERATURE = 0
-LLM_MAX_TOKENS = 7500
+load_dotenv()
 
-OUTPUT_FOLDER = "./runs"
+LLM_MODEL = os.getenv("LLM_MODEL")
+LLM_PROVIDER = os.getenv("LLM_PROVIDER")
+LLM_TEMPERATURE = int(os.getenv("LLM_TEMPERATURE", 0))
+LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", 7500))
+OUTPUT_FOLDER = os.getenv(
+    "OUTPUT_FOLDER", "./runs"
+)
