@@ -85,7 +85,7 @@ class ContentProcessor:
     def summarize_documents_map_reduce(self, documents):
         """Summarize documents using a map-reduce approach."""
         text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-            chunk_size=self.llm_max_tokens, chunk_overlap=0
+            chunk_size=self.llm_max_tokens, chunk_overlap=self.llm_max_tokens // 10
         )
         doc_chunks = text_splitter.split_documents(documents)
 
