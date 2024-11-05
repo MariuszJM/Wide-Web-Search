@@ -4,8 +4,6 @@ from langchain_nomic.embeddings import NomicEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser
-import json
-import logging
 
 
 class ContentProcessor:
@@ -42,14 +40,8 @@ class ContentProcessor:
         response = self.llm_handler.invoke_json(
             [SystemMessage(content=instructions), HumanMessage(content=prompt)]
         )
-        try:
-            result = json.loads(response.content)
-        except json.JSONDecodeError:
-            logging.warning(
-                "LLM output is not a valid JSON. Please check your LLM model or the instructions."
-            )
-            return "no"
-        return result.get("binary_score", "").lower() == "yes"
+
+        return response.get("binary_score", "").lower() == "yes"
 
     def generate_answer(self, question, relevant_chunks):
         """Generate an answer based on relevant document chunks."""
@@ -72,14 +64,7 @@ class ContentProcessor:
         response = self.llm_handler.invoke_json(
             [SystemMessage(content=instructions), HumanMessage(content=prompt)]
         )
-        try:
-            result = json.loads(response.content)
-        except json.JSONDecodeError:
-            logging.warning(
-                "LLM output is not a valid JSON. Please check your LLM model or the instructions."
-            )
-            return "no"
-        return result.get("binary_score", "no")
+        return response.get("binary_score", "no")
 
     def summarize_documents_map_reduce(self, documents):
         """Summarize documents using a map-reduce approach."""

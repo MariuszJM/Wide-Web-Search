@@ -1,5 +1,7 @@
 from langchain_ollama import ChatOllama
 from langchain_groq import ChatGroq
+import logging
+import json
 
 
 class LLMHandler:
@@ -9,6 +11,7 @@ class LLMHandler:
         """Initialize LLM models based on the selected provider and model."""
         self.llm = self.get_llm(llm_name, llm_model)
         self.llm_json = self.get_llm_json_mode(llm_name, llm_model)
+        self.llm_name = llm_name
 
     def get_llm(self, llm_name, llm_model):
         """Return the LLM instance based on the provider and model."""
@@ -41,5 +44,15 @@ class LLMHandler:
 
     def invoke_json(self, message):
         """Invoke the JSON-based LLM and return a response."""
-        response = self.llm_json.invoke(message)
+        if self.llm_name == "ollama":
+            response = self.llm_json.invoke(message)
+            try:
+                response = json.loads(response.content)
+            except json.JSONDecodeError:
+                logging.warning(
+                    "LLM output is not a valid JSON. Please check your LLM model or the instructions."
+                )
+                return {"binary_score": "no"}
+        elif self.llm_name == "groq":
+            response = self.llm_json.invoke(message)
         return response
