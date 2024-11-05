@@ -34,12 +34,12 @@ class LLMHandler:
         else:
             raise ValueError(f"Unknown LLM name: {llm_name}")
 
-    def invoke_text(self, prompt):
+    def invoke_text(self, message):
         """Invoke the text-based LLM and return a response."""
-        response = self.llm.invoke([prompt])
-        return response.content.strip()
+        response = self.llm.invoke(message)
+        return response
 
-    def invoke_json(self, prompt):
+    def invoke_json(self, message):
         """Invoke the JSON-based LLM and return a response."""
-        response = self.llm_json.invoke([prompt])
-        return response.content
+        response = self.llm_json.invoke(message)
+        return response

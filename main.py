@@ -16,9 +16,7 @@ def main():
 
     search_engine = get_search_engine(platform)
     llm_handler = LLMHandler(LLM_PROVIDER, LLM_MODEL)
-    content_processor = ContentProcessor(
-        llm_handler.llm, llm_handler.llm_json, LLM_MAX_TOKENS
-    )
+    content_processor = ContentProcessor(llm_handler, LLM_MAX_TOKENS)
 
     urls = search_engine.fetch_urls(queries, max_sources, time_horizon)
     source_items = search_engine.load_source_content(urls)

@@ -11,10 +11,9 @@ import logging
 class ContentProcessor:
     """Class to handle content processing logic."""
 
-    def __init__(self, llm, llm_json, llm_max_tokens):
+    def __init__(self, llm_handler, llm_max_tokens):
         """Initialize with the given LLM and JSON LLM models."""
-        self.llm = llm
-        self.llm_json = llm_json
+        self.llm_handler = llm_handler
         self.llm_max_tokens = llm_max_tokens
 
     def create_retriever(self, documents):
@@ -40,7 +39,7 @@ class ContentProcessor:
                         If the document contains keywords or semantic meaning related to the question, grade it as relevant."""
         prompt = f"""Document:\n\n{chunk_text}\n\nQuestion:\n\n{question}\n\nDoes the document contain information relevant to the question?
                     Return JSON with a single key 'binary_score' with value 'yes' or 'no'."""
-        response = self.llm_json.invoke(
+        response = self.llm_handler.invoke_json(
             [SystemMessage(content=instructions), HumanMessage(content=prompt)]
         )
         try:
@@ -58,7 +57,7 @@ class ContentProcessor:
         prompt = f"""You are an assistant for answering questions.
                     Context:\n\n{context}\n\nQuestion:\n\n{question}
                     Provide a concise answer (maximum three sentences) based only on the above context."""
-        response = self.llm.invoke([HumanMessage(content=prompt)])
+        response = self.llm_handler.invoke_text([HumanMessage(content=prompt)])
         return response.content.strip()
 
     def check_hallucination(self, answer, relevant_chunks):
@@ -70,7 +69,7 @@ class ContentProcessor:
                         2. The student's answer should not contain information outside the scope of the facts.
                         Return JSON with two keys: 'binary_score' ('yes' or 'no') indicating if the answer meets the criteria, and 'explanation' providing reasoning."""
         prompt = f"""Facts:\n\n{facts}\n\nStudent's Answer:\n\n{answer}\n\nIs the student's answer grounded in the facts?"""
-        response = self.llm_json.invoke(
+        response = self.llm_handler.invoke_json(
             [SystemMessage(content=instructions), HumanMessage(content=prompt)]
         )
         try:
@@ -99,18 +98,20 @@ class ContentProcessor:
         """
         reduce_prompt = ChatPromptTemplate.from_messages([("human", reduce_template)])
 
-        map_chain = map_prompt | self.llm | StrOutputParser()
-        reduce_chain = reduce_prompt | self.llm | StrOutputParser()
+        map_chain = map_prompt | self.llm_handler.llm | StrOutputParser()
+        reduce_chain = reduce_prompt | self.llm_handler.llm | StrOutputParser()
 
         summaries = [map_chain.invoke(chunk.page_content) for chunk in doc_chunks]
 
         def calculate_total_tokens(summaries):
-            return sum(self.llm.get_num_tokens(summary) for summary in summaries)
+            return sum(
+                self.llm_handler.llm.get_num_tokens(summary) for summary in summaries
+            )
 
         def split_summaries_into_chunks(summaries, max_tokens):
             chunks, current_chunk, current_tokens = [], [], 0
             for summary in summaries:
-                summary_tokens = self.llm.get_num_tokens(summary)
+                summary_tokens = self.llm_handler.llm.get_num_tokens(summary)
                 if current_tokens + summary_tokens <= max_tokens:
                     current_chunk.append(summary)
                     current_tokens += summary_tokens
