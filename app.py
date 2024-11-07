@@ -9,6 +9,7 @@ from src.search import get_search_engine
 from src.llm import LLMHandler
 import io
 import zipfile
+from config import OUTPUT_FOLDER, LLM_PROVIDER, LLM_MODEL, LLM_MAX_TOKENS
 
 # Load environment variables
 load_dotenv()
@@ -23,71 +24,53 @@ logging.basicConfig(
 def main():
     st.title("Wide Search Application")
     st.sidebar.header("Search Configuration")
-    default_config = load_config("config.yaml")
 
-    # Display all YAML fields to be edited in Streamlit
-    llm_provider = st.sidebar.text_input(
-        "LLM Provider", value=default_config.get("llm_provider", "openai")
-    )
-    llm_model = st.sidebar.text_input(
-        "LLM Model", value=default_config.get("llm_model", "gpt-3.5-turbo")
-    )
-    llm_temperature = st.sidebar.slider(
-        "LLM Temperature",
-        min_value=0.0,
-        max_value=1.0,
-        value=float(default_config.get("llm_temperature", 0.0)),
-    )
-    llm_max_tokens = st.sidebar.number_input(
-        "LLM Max Tokens", min_value=1, value=default_config.get("llm_max_tokens", 1024)
-    )
+    default_config = load_config("user_input.yaml")
 
     search_queries = st.sidebar.text_area(
-        "Search phrases (one per line)",
-        value="\n".join(default_config.get("search_queries", [])),
+        "SEARCH_QUERIES (one per line)",
+        value="\n".join(default_config.get("SEARCH_QUERIES", [])),
     ).split("\n")
 
     content_questions = st.sidebar.text_area(
-        "Specific questions (one per line)",
-        value="\n".join(default_config.get("content_questions", [])),
+        "CONTENT_QUESTIONS (one per line)",
+        value="\n".join(default_config.get("CONTENT_QUESTIONS", [])),
     ).split("\n")
 
-    platform = st.sidebar.selectbox(
-        "Platform",
-        options=["google", "youtube"],
-        index=["google", "youtube"].index(default_config.get("platform", "google")),
-    )
-
     time_horizon = st.sidebar.number_input(
-        "Time horizon (days)",
+        "TIME_HORIZON_DAYS",
         min_value=1,
-        value=default_config.get("time_horizon_days", 90),
+        value=default_config.get("TIME_HORIZON_DAYS", 90),
     )
 
     max_top_sources = st.sidebar.number_input(
-        "Maximum number of results",
+        "MAX_TOP_SOURCES",
         min_value=1,
-        value=default_config.get("max_top_sources", 5),
+        value=default_config.get("MAX_TOP_SOURCES", 5),
     )
 
-    output_folder = st.sidebar.text_input(
-        "Output folder", value=default_config.get("output_folder", "results")
+    platform = st.sidebar.selectbox(
+        "PLATFORM",
+        options=["google", "youtube"],
+        index=["google", "youtube"].index(default_config.get("PLATFORM", "google")),
     )
 
-    search_config = {
-        "llm_provider": llm_provider,
-        "llm_model": llm_model,
-        "llm_temperature": llm_temperature,
-        "llm_max_tokens": llm_max_tokens,
-        "search_queries": search_queries,
-        "content_questions": content_questions,
-        "platform": platform,
-        "time_horizon_days": time_horizon,
-        "max_top_sources": max_top_sources,
-        "output_folder": output_folder,
+    max_sources_per_search_query = st.sidebar.number_input(
+        "MAX_SOURCES_PER_SEARCH_QUERY",
+        min_value=1,
+        value=default_config.get("MAX_SOURCES_PER_SEARCH_QUERY", 10),
+    )
+
+    input_user = {
+        "SEARCH_QUERIES": search_queries,
+        "CONTENT_QUESTIONS": content_questions,
+        "PLATFORM": platform,
+        "TIME_HORIZON_DAYS": time_horizon,
+        "MAX_TOP_SOURCES": max_top_sources,
+        "MAX_SOURCES_PER_SEARCH_QUERY": max_sources_per_search_query,
     }
 
-    config_yaml = yaml.dump(search_config, allow_unicode=True)
+    config_yaml = yaml.dump(input_user, allow_unicode=True)
     st.sidebar.download_button(
         "Download current configuration as YAML",
         data=config_yaml,
@@ -103,18 +86,13 @@ def main():
             st.info("Starting wide search...")
             logging.info("Wide search started.")
 
-            # Display configuration used for the search
-            st.subheader("Search Configuration")
-            st.json(search_config)  # Show the search configuration in JSON format
-
-            # Run the wide search with the updated configuration
-            results = run_wide_search(search_config)
+            results = run_wide_search(input_user)
 
             st.success("Wide search completed.")
             st.json(results)
 
             # Download results option
-            zip_bytes = create_zip_file(results, search_config)
+            zip_bytes = create_zip_file(results, input_user)
             st.download_button(
                 "Download ZIP file",
                 data=zip_bytes.getvalue(),
@@ -129,32 +107,26 @@ def main():
             logging.exception("Error during wide search.")
 
 
-def run_wide_search(config):
-    llm_handler = LLMHandler(
-        llm_provider=config["llm_provider"],
-        llm_model=config["llm_model"],
-        llm_temperature=config["llm_temperature"],
-        llm_max_tokens=config["llm_max_tokens"],
-    )
+def run_wide_search(input_user):
+    queries = input_user.get("SEARCH_QUERIES")
+    max_sources = input_user.get("MAX_SOURCES_PER_SEARCH_QUERY")
+    time_horizon = input_user.get("TIME_HORIZON_DAYS")
+    content_questions = input_user.get("CONTENT_QUESTIONS")
+    max_top_sources = input_user.get("MAX_TOP_SOURCES")
+    platform = input_user.get("PLATFORM")
 
-    search_engine = get_search_engine(config["platform"])
+    search_engine = get_search_engine(platform)
+    llm_handler = LLMHandler(LLM_PROVIDER, LLM_MODEL)
+    content_processor = ContentProcessor(llm_handler, LLM_MAX_TOKENS)
 
-    urls = search_engine.fetch_urls(
-        search_queries=config["search_queries"],
-        max_sources_per_search_query=config["max_top_sources"],
-        time_horizon_days=config["time_horizon_days"],
-    )
-
+    urls = search_engine.fetch_urls(queries, max_sources, time_horizon)
     source_items = search_engine.load_source_content(urls)
 
-    content_processor = ContentProcessor(llm_handler)
     processed_items = content_processor.process_content(
-        source_items,
-        content_questions=config["content_questions"],
-        max_top_sources=config["max_top_sources"],
+        source_items, content_questions, max_top_sources
     )
 
-    output_dir = create_output_directory(config["output_folder"])
+    output_dir = create_output_directory(OUTPUT_FOLDER)
     save_results(processed_items, output_dir)
 
     return processed_items
