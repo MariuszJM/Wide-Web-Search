@@ -11,7 +11,6 @@ import io
 import zipfile
 from config import OUTPUT_FOLDER, LLM_PROVIDER, LLM_MODEL, LLM_MAX_TOKENS
 
-# Load environment variables
 load_dotenv()
 LOG_FILE = "app.log"
 logging.basicConfig(
@@ -78,7 +77,6 @@ def main():
         mime="application/x-yaml",
     )
 
-    # Button to start wide search
     if st.button("Run Wide Search"):
         try:
             clear_logs()
@@ -91,7 +89,6 @@ def main():
             st.success("Wide search completed.")
             st.json(results)
 
-            # Download results option
             zip_bytes = create_zip_file(results, input_user)
             st.download_button(
                 "Download ZIP file",
@@ -100,7 +97,6 @@ def main():
                 mime="application/zip",
             )
 
-            # Clear logs after the run
             clear_logs()
         except Exception as e:
             st.error(f"An error occurred: {e}")
