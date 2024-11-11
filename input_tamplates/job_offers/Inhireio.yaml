@@ -23,12 +23,15 @@ CONTENT_QUESTIONS:
   - "Is Matplotlib needed?"
   - "Is Plotly required?"
   - "Is Git required?"
+  - "Is English required?"
+  - "Is knowledge about RAG [Retrieval Augmented Generation] needed?"
+  - "Is knowledge about LLM [Large Language Model] needed?"
   - "Is this a job offer page?"
   - "Does this page contain a job offer?"
   - "Is there a job offer on this page?"
   - "Is this page presenting a job offer?"
   - "Is a job offer provided on this page?"
-  - "Does this page a job offer?"
+  - "Does this page have a job offer?"
 
 TIME_HORIZON_DAYS: 30
 MAX_TOP_SOURCES: 10

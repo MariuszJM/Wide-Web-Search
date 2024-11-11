@@ -1,10 +1,10 @@
 SEARCH_QUERIES:
-  - "Machine Learning Engineer The.it"
-  - "ML Ops Engineer The.it"
-  - "Python Developer (AI/ML) The.it"
-  - "AI Platform Engineer The.it"
-  - "Data Scientist The.it"
-  - "LLM AI Engineer The.it"
+  - "Machine Learning Engineer Just Join IT"
+  - "ML Ops Engineer Just Join IT"
+  - "Python Developer (AI/ML) Just Join IT"
+  - "AI Platform Engineer Just Join IT"
+  - "Data Scientist Just Join IT"
+  - "LLM AI Engineer Just Join IT"
 
 CONTENT_QUESTIONS:
   - "Is this a remote job offer?"
@@ -23,12 +23,15 @@ CONTENT_QUESTIONS:
   - "Is Matplotlib needed?"
   - "Is Plotly required?"
   - "Is Git required?"
+  - "Is English required?"
+  - "Is knowledge about RAG [Retrieval Augmented Generation] needed?"
+  - "Is knowledge about LLM [Large Language Model] needed?"
   - "Is this a job offer page?"
   - "Does this page contain a job offer?"
   - "Is there a job offer on this page?"
   - "Is this page presenting a job offer?"
   - "Is a job offer provided on this page?"
-  - "Does this page a job offer?"
+  - "Does this page have a job offer?"
 
 TIME_HORIZON_DAYS: 30
 MAX_TOP_SOURCES: 10
