@@ -5,8 +5,8 @@ from config import OUTPUT_FOLDER, LLM_PROVIDER, LLM_MODEL, LLM_MAX_TOKENS
 from src.llm import LLMHandler
 
 
-def main():
-    input_user = load_config("user_input.yaml")
+def main(config_file_name):
+    input_user = load_config(config_file_name)
     queries = input_user.get("SEARCH_QUERIES")
     max_sources = input_user.get("MAX_SOURCES_PER_SEARCH_QUERY")
     time_horizon = input_user.get("TIME_HORIZON_DAYS")
@@ -30,4 +30,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    config_file_name ="user_input.yaml"
+    main(config_file_name)
