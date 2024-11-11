@@ -20,6 +20,8 @@ class ContentProcessor:
             chunk_size=1000, chunk_overlap=200
         )
         doc_chunks = text_splitter.split_documents(documents)
+        if len(doc_chunks) == 0:
+            return None
         k = min(len(doc_chunks), 3)
         vectorstore = SKLearnVectorStore.from_documents(
             documents=doc_chunks,
@@ -120,9 +122,9 @@ class ContentProcessor:
         processed_items = {}
         for title, data in source_items.items():
             documents = data["documents"]
-            if not documents:
-                continue    
             retriever = self.create_retriever(documents)
+            if retriever is None:
+                continue
             qa_pairs = {}
             for question in content_questions:
                 relevant_chunks = retriever.get_relevant_documents(question)
