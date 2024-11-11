@@ -120,6 +120,8 @@ class ContentProcessor:
         processed_items = {}
         for title, data in source_items.items():
             documents = data["documents"]
+            if not documents:
+                continue    
             retriever = self.create_retriever(documents)
             qa_pairs = {}
             for question in content_questions:
