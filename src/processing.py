@@ -53,6 +53,16 @@ class ContentProcessor:
                     Provide a concise answer (maximum three sentences) based only on the above context."""
         response = self.llm_handler.invoke_text([HumanMessage(content=prompt)])
         return response.content.strip()
+    
+    def is_meaningful_answer(self, answer):
+        """Determine if the generated answer provides meaningful information."""
+        instructions = """You are an evaluator tasked with determining whether the following answer provides meaningful information based on the context, or simply states that there is no relevant information.
+                            Return JSON with a single key 'binary_score' with value 'yes' if the answer is meaningful, 'no' if it indicates lack of relevant information."""
+        prompt = f"""Answer:\n\n{answer}\n\nDoes the answer provide meaningful information based on the context?"""
+        response = self.llm_handler.invoke_json(
+            [SystemMessage(content=instructions), HumanMessage(content=prompt)]
+        )
+        return response.get("binary_score", "").lower() == "yes"
 
     def check_hallucination(self, answer, relevant_chunks):
         """Check if the generated answer is grounded in the document facts."""
@@ -136,6 +146,8 @@ class ContentProcessor:
                 if not relevant_chunks:
                     continue
                 answer = self.generate_answer(question, relevant_chunks)
+                if not self.is_meaningful_answer(answer):
+                    continue
                 if self.check_hallucination(answer, relevant_chunks).lower() == "yes":
                     qa_pairs[question] = answer
             if qa_pairs:
